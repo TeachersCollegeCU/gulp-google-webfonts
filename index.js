@@ -238,15 +238,15 @@ function getter(options) {
 				var re = new RegExp([
 					"\\s*font-family:\\s*'([^']+)';",
 					"\\s*font-style:\\s*(\\w+);",
-					"\\s*font-weight:\\s*(\\w+);",
-					"\\s*src:[^;]*url\\(([^)]+)\\)[^;]*;",
+					"\\s*font-weight:\\s*([\\w\\s]+);",
+					"\\s*src:\\s*(local\\('([^']+)'\\),\\s*local\\('([^']+)'\\),\\s*)?url\\(([^)]+)\\)[^;]*;",
 					".*(?:unicode-range:([^;]+);)?",
 				].join(''), 'm');
 
 				return formatData.apply(null, block.match(re, 'm'));
 
 
-				function formatData(block, family, style, weight, url, range) {
+				function formatData(block, family, style, weight, localBoth, local1, local2, url, range) {
 					var name = [family, style, weight].join('-') + '.' + ext;
 					return {
 						family: family,
@@ -254,6 +254,8 @@ function getter(options) {
 						weight: weight,
 						name: name.replace(/\s/g, '_'),
 						url: url,
+						local1: (!local1 || local1 === undefined) ? '' : local1,
+						local2: (!local2 || local2 === undefined) ? '' : local2,
 						range: range || 'U+0-10FFFF'
 					};
 				}
@@ -293,14 +295,14 @@ function getter(options) {
 
 			function makeFontFace(request) {
 				request.uri = path.posix.join(
-					options.relativePaths ? path.posix.relative(options.cssDir, options.fontsDir) : options.fontsDir, 
+					options.relativePaths ? path.posix.relative(options.cssDir, options.fontsDir) : options.fontsDir,
 					request.name
 				);
 				request.name = path.posix.join(options.fontsDir, request.name);
 				return template
 					.replace(/\$(\w+)/g, function (m, name) {
 						return request[name];
-					});
+					}).replace(/(local\(\'\'\)\,\s)/g,'');
 			}
 		}
 
